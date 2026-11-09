@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MontaPC – Monta tu ordenador</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--tx:#1b2333;--mut:#667;--ok:#16a34a;--bad:#dc2626;--ac:#2563eb;--bd:#d9dfec;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1420;--card:#192032;--tx:#e8ecf5;--mut:#9aa4bd;--ok:#4ade80;--bad:#f87171;--ac:#60a5fa;--bd:#2b3550}}
+:root[data-theme="dark"]{--bg:#0f1420;--card:#192032;--tx:#e8ecf5;--mut:#9aa4bd;--ok:#4ade80;--bad:#f87171;--ac:#60a5fa;--bd:#2b3550}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.4}
+main{max-width:760px;margin:0 auto;padding:16px}
+h1{font-size:1.4rem;margin:0 0 4px}h2{font-size:1.05rem;margin:20px 0 8px}
+p.s{color:var(--mut);margin:0 0 12px}
+.profiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.p{background:var(--card);border:2px solid var(--bd);border-radius:12px;padding:12px;cursor:pointer;text-align:left;color:var(--tx);font:inherit}
+.p.on{border-color:var(--ac)}.p b{display:block}.p span{color:var(--mut);font-size:.9rem}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--card);border:2px solid var(--ok);border-radius:12px;padding:10px 12px;margin:12px 0}
+.bar.over{border-color:var(--bad)}
+.nums{display:flex;justify-content:space-between;font-weight:600;flex-wrap:wrap;gap:4px}
+.track{height:10px;background:var(--bd);border-radius:6px;overflow:hidden;margin-top:6px}
+.fill{height:100%;background:var(--ok);width:0;transition:width .25s}.over .fill{background:var(--bad)}
+.msg{margin-top:6px;font-size:.9rem;color:var(--bad)}
+.cat{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px;margin-bottom:10px}
+.cat h3{margin:0 0 8px;font-size:.95rem}
+.opts{display:grid;gap:6px}
+.o{display:flex;justify-content:space-between;gap:8px;align-items:center;border:2px solid var(--bd);border-radius:10px;padding:8px 10px;background:transparent;color:var(--tx);font:inherit;text-align:left;cursor:pointer;width:100%}
+.o.on{border-color:var(--ac)}.o.bad{border-color:var(--bad);opacity:.7}
+.o small{display:block;color:var(--mut)}.o .e{color:var(--bad);font-size:.8rem}
+.pr{font-weight:700;white-space:nowrap}
+.go{width:100%;padding:14px;border:0;border-radius:12px;background:var(--ac);color:#fff;font:inherit;font-weight:700;margin-top:8px;cursor:pointer}
+.go:disabled{background:var(--bd);color:var(--mut);cursor:not-allowed}
+.hid{display:none}
+.ok{color:var(--ok);font-weight:600;margin-top:8px}
+.tg{fill:rgba(37,99,235,.2);stroke:var(--ac);stroke-width:2;stroke-dasharray:5 3;animation:pl .9s infinite alternate;cursor:pointer}
+.dim{fill:transparent;cursor:pointer}
+@keyframes pl{to{fill:rgba(37,99,235,.5)}}
+svg text{fill:#fff;font:600 10px system-ui,sans-serif;pointer-events:none}
+#svg{background:var(--card);border:1px solid var(--bd);border-radius:12px;max-height:70vh}
+.m2{min-height:44px;margin:8px 0;padding:8px 10px;border-radius:10px;background:var(--card);border:1px solid var(--bd)}
+.sec{background:transparent;color:var(--tx);border:2px solid var(--bd)}
+.scr{background:#0a0f1c;color:#cbd5e1;font:14px/1.5 ui-monospace,Menlo,monospace;border:8px solid #334155;border-radius:12px;padding:14px;min-height:280px}
+.scr.bl{background:#1e3a8a;color:#e0e7ff}
+.scr pre{white-space:pre-wrap;margin:6px 0;font:inherit}
+.scr p{margin:6px 0}.scr select{font:inherit;padding:4px}
+</style>
+</head>
+<body>
+<main>
+<h1>🖥️ MontaPC</h1>
+<p class="s">1) Elige un perfil · 2) Elige piezas sin pasarte del presupuesto · 3) Pasa al montaje</p>
+<div class="profiles" id="profiles"></div>
+<div id="app" class="hid">
+  <div class="bar" id="bar">
+    <div class="nums"><span>Gastado: <span id="spent">0</span> €</span><span>Quedan: <span id="left">0</span> €</span><span>Límite: <span id="limit">0</span> €</span></div>
+    <div class="track"><div class="fill" id="fill"></div></div>
+    <div class="msg" id="msg"></div>
+  </div>
+  <div id="cats"></div>
+  <button class="go" id="go" disabled>Continuar al montaje →</button>
+  <div class="ok hid" id="done">✅ ¡Configuración válida! Siguiente fase: montaje paso a paso.</div>
+</div>
+<div id="asm" class="hid">
+  <h2>🔧 Fase 2: Montaje</h2>
+  <p class="s" id="astep"></p>
+  <svg id="svg" viewBox="0 0 360 520" width="100%" role="img" aria-label="Montaje del ordenador"></svg>
+  <div class="m2" id="amsg"></div>
+  <h3 id="trayh">Bandeja de piezas</h3>
+  <div class="opts" id="tray"></div>
+  <button class="go hid" id="next">Continuar: POST / BIOS →</button>
+  <button class="go sec" id="redo">↺ Reiniciar montaje</button>
+  <button class="go sec" id="back">← Cambiar piezas</button>
+</div>
+<div id="pc" class="hid">
+  <h2>🖥️ Fase 3: Encendido y software</h2>
+  <div class="scr" id="scr"></div>
+  <div id="pcbtn"></div>
+</div>
+</main>
+<script>
+const PROFILES=[
+ {id:"ofi",name:"Ofimática / Estudio",budget:600,icon:"📚"},
+ {id:"gam",name:"Gaming básico",budget:900,icon:"🎮"},
+ {id:"vid",name:"Edición de vídeo",budget:1200,icon:"🎬"}];
+const CATS=[
+ {id:"cpu",name:"Procesador (CPU)"},{id:"cooler",name:"Refrigeración"},{id:"mobo",name:"Placa base"},
+ {id:"ram",name:"Memoria RAM"},{id:"ssd",name:"Almacenamiento"},{id:"gpu",name:"Tarjeta gráfica"},
+ {id:"psu",name:"Fuente de alimentación"},{id:"case",name:"Caja"}];
+const PARTS=[
+ {id:"cpu1",c:"cpu",n:"Ryzen 5 5600",p:120,socket:"AM4",tdp:65},
+ {id:"cpu2",c:"cpu",n:"Ryzen 5 7600",p:200,socket:"AM5",tdp:65},
+ {id:"cpu3",c:"cpu",n:"Core i5-12400F",p:150,socket:"LGA1700",tdp:65},
+ {id:"co1",c:"cooler",n:"Disipador básico",p:15},{id:"co2",c:"cooler",n:"Torre doble ventilador",p:35},{id:"co3",c:"cooler",n:"Líquida 240 mm",p:90},
+ {id:"mb1",c:"mobo",n:"B550 (AM4, DDR4)",p:110,socket:"AM4",ram:"DDR4"},
+ {id:"mb2",c:"mobo",n:"B650 (AM5, DDR5)",p:170,socket:"AM5",ram:"DDR5"},
+ {id:"mb3",c:"mobo",n:"B660 (LGA1700, DDR4)",p:130,socket:"LGA1700",ram:"DDR4"},
+ {id:"r1",c:"ram",n:"16 GB DDR4",p:40,ram:"DDR4"},{id:"r2",c:"ram",n:"32 GB DDR4",p:75,ram:"DDR4"},
+ {id:"r3",c:"ram",n:"16 GB DDR5",p:65,ram:"DDR5"},{id:"r4",c:"ram",n:"32 GB DDR5",p:110,ram:"DDR5"},
+ {id:"s1",c:"ssd",n:"SSD 500 GB",p:35},{id:"s2",c:"ssd",n:"SSD 1 TB",p:60},{id:"s3",c:"ssd",n:"SSD 2 TB",p:110},
+ {id:"g0",c:"gpu",n:"Gráfica integrada (sin tarjeta)",p:0,tdp:0},
+ {id:"g1",c:"gpu",n:"RTX 3050 6 GB",p:200,tdp:130},{id:"g2",c:"gpu",n:"RX 7600 8 GB",p:270,tdp:165},{id:"g3",c:"gpu",n:"RTX 4070 12 GB",p:550,tdp:200},
+ {id:"p1",c:"psu",n:"Fuente 450 W",p:40,w:450},{id:"p2",c:"psu",n:"Fuente 550 W",p:55,w:550},
+ {id:"p3",c:"psu",n:"Fuente 650 W",p:75,w:650},{id:"p4",c:"psu",n:"Fuente 750 W",p:100,w:750},
+ {id:"k1",c:"case",n:"Caja básica",p:40},{id:"k2",c:"case",n:"Caja media",p:70},{id:"k3",c:"case",n:"Caja premium",p:120}];
+const st={profile:null,sel:{}};
+const $=id=>document.getElementById(id);
+const get=c=>PARTS.find(x=>x.id===st.sel[c]);
+
+function conflict(part){
+  // devuelve un texto si 'part' choca con lo ya elegido (compatibilidad básica)
+  const cpu=get("cpu"),mb=get("mobo"),ram=get("ram");
+  if(part.c==="cpu"&&mb&&mb.socket!==part.socket)return "Socket distinto al de la placa";
+  if(part.c==="mobo"&&cpu&&cpu.socket!==part.socket)return "Socket distinto al de la CPU";
+  if(part.c==="mobo"&&ram&&ram.ram!==part.ram)return "Tipo de RAM distinto";
+  if(part.c==="ram"&&mb&&mb.ram!==part.ram)return "RAM incompatible con la placa";
+  return "";
+}
+function psuNeed(){return (get("cpu")?.tdp||0)+(get("gpu")?.tdp||0)+100}
+function problems(){
+  const out=[],cpu=get("cpu"),mb=get("mobo"),ram=get("ram"),psu=get("psu");
+  CATS.forEach(c=>{if(!st.sel[c.id])out.push("Falta elegir: "+c.name)});
+  if(cpu&&mb&&cpu.socket!==mb.socket)out.push("CPU y placa tienen sockets distintos");
+  if(mb&&ram&&mb.ram!==ram.ram)out.push("La RAM no es compatible con la placa");
+  if(psu&&psu.w<psuNeed())out.push("Fuente insuficiente: necesitas al menos "+psuNeed()+" W");
+  return out;
+}
+function total(){return Object.values(st.sel).reduce((s,id)=>s+PARTS.find(x=>x.id===id).p,0)}
+
+function renderProfiles(){
+  $("profiles").innerHTML=PROFILES.map(p=>`<button class="p ${st.profile?.id===p.id?"on":""}" data-id="${p.id}"><b>${p.icon} ${p.name}</b><span>Presupuesto: ${p.budget} €</span></button>`).join("");
+  document.querySelectorAll(".p").forEach(b=>b.onclick=()=>{st.profile=PROFILES.find(x=>x.id===b.dataset.id);st.sel={};$("app").classList.remove("hid");render()});
+}
+function renderCats(){
+  $("cats").innerHTML=CATS.map(c=>`<div class="cat"><h3>${c.name}</h3><div class="opts">`+
+    PARTS.filter(p=>p.c===c.id).map(p=>{
+      const cf=conflict(p),on=st.sel[c.id]===p.id;
+      return `<button class="o ${on?"on":""} ${cf&&!on?"bad":""}" data-id="${p.id}"><span>${p.n}${cf&&!on?`<small class="e">⚠ ${cf}</small>`:""}</span><span class="pr">${p.p} €</span></button>`}).join("")+`</div></div>`).join("");
+  document.querySelectorAll(".o").forEach(b=>b.onclick=()=>{
+    const p=PARTS.find(x=>x.id===b.dataset.id);
+    if(st.sel[p.c]===p.id)delete st.sel[p.c];else st.sel[p.c]=p.id; // clic de nuevo = quitar
+    render()});
+}
+function render(){
+  renderProfiles();renderCats();
+  const t=total(),lim=st.profile.budget,over=t>lim,pr=problems();
+  $("spent").textContent=t;$("limit").textContent=lim;$("left").textContent=lim-t;
+  $("fill").style.width=Math.min(100,t/lim*100)+"%";
+  $("bar").classList.toggle("over",over);
+  $("msg").textContent=over?`⛔ Te pasas ${t-lim} € del presupuesto. Quita o cambia piezas.`:"";
+  const blocked=over||pr.length>0;
+  $("go").disabled=blocked;
+  if(!over&&pr.length)$("msg").textContent="⚠ "+pr[0]+(pr.length>1?` (+${pr.length-1} más)`:"");
+  $("done").classList.add("hid");
+}
+/* ===== FASE 2: MONTAJE (toca pieza → toca zona resaltada) ===== */
+const STEPS=[
+ {id:"cpu",it:"cpu",tg:"socket",t:"Coloca la CPU en el socket",w:"Se alinea el triángulo dorado de la CPU con el de la placa."},
+ {id:"lever",tg:"socket",t:"Toca el socket para bajar la palanca",w:"La palanca fija la CPU; sin ella no hace buen contacto."},
+ {id:"paste",it:"paste",tg:"socket",t:"Aplica pasta térmica sobre la CPU",w:"Una gota pequeña ayuda a pasar el calor de la CPU al disipador."},
+ {id:"cooler",it:"cooler",tg:"socket",t:"Monta el disipador sobre la pasta",w:"Sin disipador la CPU se sobrecalienta en segundos."},
+ {id:"ram1",it:"ram",tg:"slot",t:"Inserta el 1.er módulo de RAM (ranura 2)",w:"En 4 ranuras, usa la 2 y la 4 para activar Dual Channel."},
+ {id:"ram2",it:"ram",tg:"slot",t:"Inserta el 2.º módulo de RAM (ranura 4)",w:"Dos módulos iguales en canales distintos = más ancho de banda."},
+ {id:"mobo",it:"mobo",tg:"case",t:"Instala la placa base dentro de la caja",w:"Es más fácil montar CPU, RAM y disipador con la placa fuera de la caja."},
+ {id:"psu",it:"psu",tg:"psu",t:"Monta la fuente en su hueco de la caja",w:"La fuente reparte la electricidad a todas las piezas."},
+ {id:"atx",it:"atx",tg:"atx",t:"Conecta el cable ATX de 24 pines",w:"Es la alimentación principal de la placa base."},
+ {id:"cpu8",it:"cpu8",tg:"cpu8",t:"Conecta el cable CPU de 8 pines",w:"Alimenta el procesador de forma independiente."},
+ {id:"gpu",it:"gpu",tg:"gpu",t:"Inserta la tarjeta gráfica en el slot PCIe",w:"Va en el slot PCIe x16, el más largo."},
+ {id:"pcie",it:"pcie",tg:"gpu",t:"Conecta el cable PCIe a la gráfica",w:"Las gráficas potentes necesitan alimentación extra de la fuente."},
+ {id:"ssd",it:"ssd",tg:"ssd",t:"Instala el almacenamiento en su bahía",w:"Aquí se guardarán el sistema operativo y tus archivos."}];
+const TR={cpu:[56,40,50,50],slot0:[122,12,9,84],slot1:[135,12,9,84],slot2:[148,12,9,84],slot3:[161,12,9,84],atx:[160,104,14,40],cpu8:[40,6,50,9],gpu:[10,146,150,24]};
+const RT={case:[10,240,340,270],psu:[230,440,110,60],ssd:[236,262,96,44]};
+let A=null;
+function startAsm(){
+ const gi=st.sel.gpu==="g0";
+ A={steps:STEPS.filter(s=>!(gi&&(s.id==="gpu"||s.id==="pcie"))),i:0,done:[],ram:[],sel:null,msg:"Elige una pieza de la bandeja y toca la zona que parpadea."};
+ $("app").classList.add("hid");$("asm").classList.remove("hid");scrollTo(0,0);drawAsm();
+}
+const cur=()=>A.steps[A.i];
+function validT(){const s=cur();if(!s)return[];if(s.tg==="slot")return["slot1","slot3"].filter(x=>!A.ram.includes(x));return[s.tg]}
+function label(k){
+ const n=c=>get(c).n;
+ return {cpu:"🧩 "+n("cpu"),paste:"🧴 Pasta térmica",cooler:"🌀 "+n("cooler"),ram:"📏 "+n("ram"),mobo:"🟩 "+n("mobo"),psu:"🔌 "+n("psu"),atx:"🟡 Cable ATX 24 pines",cpu8:"🔴 Cable CPU 8 pines",gpu:"🎮 "+n("gpu"),pcie:"🔵 Cable PCIe",ssd:"💾 "+n("ssd")}[k];
+}
+function tapI(k){
+ const s=cur();if(!s)return;A.sel=k;
+ A.msg=k===s.it?"👍 Pieza correcta. Toca la zona que parpadea.":"❌ Aún no toca esa pieza. Paso "+(A.i+1)+": "+s.t+".";
+ drawAsm();
+}
+function tapT(id){
+ const s=cur();if(!s)return;
+ if(!validT().includes(id)){
+  A.msg=(s.tg==="slot"&&id.startsWith("slot"))?"⚠ Para Dual Channel usa las ranuras 2 y 4 (alternas).":"⚠ Ahí no. "+s.t+".";return drawAsm();
+ }
+ if(s.it&&A.sel!==s.it){A.msg="👆 Primero elige la pieza correcta en la bandeja.";return drawAsm();}
+ A.done.push(s.id);if(s.tg==="slot")A.ram.push(id);
+ A.i++;A.sel=null;A.msg="✅ "+s.w;drawAsm();
+}
+function drawAsm(){
+ const d=A.done,has=x=>d.includes(x),inCase=has("mobo"),B=inCase?[30,255]:[90,20];
+ const V=A.i<A.steps.length?validT():[],fin=A.i>=A.steps.length;
+ const hit=(id,r)=>`<rect class="${V.includes(id)?"tg":"dim"}" x="${r[0]-4}" y="${r[1]-4}" width="${r[2]+8}" height="${r[3]+8}" rx="6" onclick="tapT('${id}')"/>`;
+ const R=(r,f,x=0)=>`<rect x="${r[0]}" y="${r[1]}" width="${r[2]}" height="${r[3]}" rx="${x}" fill="${f}"/>`;
+ let s=`<rect x="10" y="240" width="340" height="270" rx="12" fill="none" stroke="#64748b" stroke-width="3"/><text style="fill:var(--mut)" x="18" y="256">CAJA</text>`;
+ s+=`<rect x="230" y="440" width="110" height="60" rx="6" fill="none" stroke="#64748b" stroke-dasharray="4 3"/><rect x="236" y="262" width="96" height="44" rx="6" fill="none" stroke="#64748b" stroke-dasharray="4 3"/>`;
+ s+=`<text style="fill:var(--mut)" x="258" y="474">Fuente</text><text style="fill:var(--mut)" x="262" y="288">Bahía SSD</text>`;
+ if(has("psu"))s+=R(RT.psu,"#475569",6)+`<text x="268" y="474">PSU</text>`;
+ if(has("ssd"))s+=R(RT.ssd,"#0891b2",6)+`<text x="272" y="288">SSD</text>`;
+ s+=`<g style="transform:translate(${B[0]}px,${B[1]}px);transition:transform .7s">`+R([0,0,180,180],"#166534",8);
+ s+=`<rect x="56" y="40" width="50" height="50" fill="#14532d" stroke="#fbbf24"/>`;
+ [0,1,2,3].forEach(i=>s+=`<rect x="${TR["slot"+i][0]}" y="12" width="9" height="84" fill="#0b3b1e"/>`);
+ s+=R(TR.atx,"#fde68a")+R(TR.cpu8,"#fecaca")+R([16,150,130,12],"#0b3b1e");
+ s+=`<text x="122" y="110" style="font-size:8px">1 2 3 4</text>`;
+ if(has("cpu"))s+=R([62,46,38,38],"#64748b",3)+`<path d="M62 46h8l-8 8z" fill="#fbbf24"/>`;
+ if(has("lever"))s+=R([106,42,5,46],"#f59e0b",2);
+ if(has("paste")&&!has("cooler"))s+=`<circle cx="81" cy="65" r="8" fill="#cbd5e1"/>`;
+ if(has("cooler"))s+=R([46,30,70,70],"#0ea5e9",8)+`<circle cx="81" cy="65" r="22" fill="#0369a1"/><text x="68" y="68">FAN</text>`;
+ A.ram.forEach(k=>s+=R(TR[k],"#22c55e",2));
+ if(has("gpu"))s+=R(TR.gpu,"#7c3aed",5)+`<circle cx="50" cy="158" r="9" fill="#4c1d95"/><circle cx="110" cy="158" r="9" fill="#4c1d95"/>`;
+ s+=hit("socket",TR.cpu)+["slot0","slot1","slot2","slot3","atx","cpu8","gpu"].map(k=>hit(k,TR[k])).join("")+`</g>`;
+ if(has("atx"))s+=`<path d="M285 470Q240 400 197 379" stroke="#eab308" stroke-width="5" fill="none"/>`;
+ if(has("cpu8"))s+=`<path d="M255 445Q110 340 95 270" stroke="#ef4444" stroke-width="5" fill="none"/>`;
+ if(has("pcie"))s+=`<path d="M240 455Q200 440 176 411" stroke="#3b82f6" stroke-width="5" fill="none"/>`;
+ s+=hit("case",RT.case).replace(/class="[a-z]+"/,V.includes("case")?'class="tg" style="pointer-events:none"':'class="dim" style="pointer-events:none"');
+ s+=(V.includes("case")?`<rect class="tg" x="6" y="236" width="348" height="278" rx="12" onclick="tapT('case')"/>`:"")+hit("psu",RT.psu)+hit("ssd",RT.ssd);
+ $("svg").innerHTML=s;
+ $("astep").textContent=fin?"¡Completado!":`Paso ${A.i+1} de ${A.steps.length}: ${cur().t}`;
+ $("amsg").textContent=fin?"🎉 ¡Montaje terminado! Todas las piezas están en su sitio.":A.msg;
+ $("tray").innerHTML=fin?"":["ssd","gpu","cpu8","paste","mobo","ram","cooler","atx","cpu","psu","pcie"].filter(k=>A.steps.slice(A.i).some(x=>x.it===k)).map(k=>`<button class="o ${A.sel===k?"on":""}" onclick="tapI('${k}')"><span>${label(k)}</span></button>`).join("");
+ $("trayh").classList.toggle("hid",fin);$("next").classList.toggle("hid",!fin);
+}
+$("go").onclick=startAsm;
+$("redo").onclick=startAsm;
+$("back").onclick=()=>{$("asm").classList.add("hid");$("app").classList.remove("hid");scrollTo(0,0)};
+/* ===== FASE 3: POST/BIOS → SO → drivers → test ===== */
+let P={},H=[],run=0;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function scr(h,c=""){$("scr").className="scr "+c;$("scr").innerHTML=h}
+function btns(a){H=a.map(x=>x[1]);$("pcbtn").innerHTML=a.map((x,i)=>`<button class="go ${x[2]||""}" onclick="H[${i}]()">${x[0]}</button>`).join("")}
+function startPC(){run++;$("asm").classList.add("hid");$("pc").classList.remove("hid");scrollTo(0,0);P={dr:{},boot:"HDD",os:""};post()}
+async function post(){
+ const id=++run;
+ const L=["MontaPC BIOS v1.0","Comprobando CPU: "+get("cpu").n+" ... OK","Comprobando RAM: "+get("ram").n+" · Dual Channel ... OK","Detectando GPU: "+get("gpu").n+" ... OK","Detectando almacenamiento: "+get("ssd").n+" ... OK","","POST completado ✔ (1 pitido corto = todo bien)"];
+ scr("<pre id='pre'></pre>");btns([]);
+ for(const l of L){if(id!==run)return;$("pre").textContent+=l+"\n";await sleep(500)}
+ btns([["Entrar en la BIOS (Supr)",bios]]);
+}
+function bios(){
+ scr(`<b>⚙ BIOS · Ajustes básicos</b><pre>CPU ........ ${get("cpu").n}\nRAM ........ ${get("ram").n} (Dual Channel)\nAlmacén .... ${get("ssd").n}\nGráfica .... ${get("gpu").n}</pre>Orden de arranque: <select id="bt" onchange="P.boot=this.value"><option value="HDD">HDD / SSD</option><option value="USB">USB (instalador del SO)</option><option value="Red">Red</option></select><p>El instalador del sistema está en un USB. ¿Desde qué dispositivo debe arrancar el equipo?</p>`,"bl");
+ $("bt").value=P.boot;
+ btns([["Guardar y salir (F10)",()=>P.boot==="USB"?osPick():noos()]]);
+}
+function noos(){scr("<pre>No se encontró ningún sistema operativo.\nInserta un disco de arranque y pulsa una tecla.</pre><p>💡 Pista: cambia el orden de arranque en la BIOS.</p>");btns([["Volver a la BIOS",bios]])}
+function osPick(){
+ scr("<b>Instalador · Elige el sistema operativo</b><p>🪟 Windows 11: de pago (licencia), muy compatible con juegos.</p><p>🐧 Ubuntu 24.04: libre y gratuito, ligero y seguro.</p>");
+ btns([["🪟 Instalar Windows 11",()=>install("Windows 11")],["🐧 Instalar Ubuntu 24.04",()=>install("Ubuntu 24.04")]]);
+}
+async function install(os){
+ const id=++run;P.os=os;btns([]);
+ const S=["Preparando el disco (particiones)…","Copiando archivos del sistema…","Instalando funciones…","Configurando usuario y red…"];
+ scr(`<b>Instalando ${os}</b><p id="ps"></p><div class="track"><div class="fill" id="pf" style="background:var(--ac);transition:width .8s linear"></div></div>`);
+ for(let i=0;i<S.length;i++){if(id!==run)return;$("ps").textContent=S[i];await sleep(60);$("pf").style.width=(i+1)*25+"%";await sleep(900)}
+ if(id!==run)return;scr(`<b>✔ ${os} instalado</b><p>Reiniciando… escritorio cargado.</p>`);await sleep(900);if(id!==run)return;drivers();
+}
+const DR={gfx:["🎮 Gráficos",()=>get("gpu").n],net:["🌐 Red","Wi-Fi / Ethernet"],aud:["🔊 Audio","Chip de sonido de la placa"]};
+function drivers(){
+ const k=Object.keys(DR),pend=k.filter(x=>!P.dr[x]);
+ scr(`<b>${P.os} · Drivers</b><p>${P.os.startsWith("Win")?"Windows Update instala algunos, pero conviene el del fabricante.":"Ubuntu detecta muchos solos; los gráficos propietarios van en «Controladores adicionales»."}</p>`+k.map(x=>`<p>${P.dr[x]?"✅":"⬜"} ${DR[x][0]} — ${typeof DR[x][1]==="function"?DR[x][1]():DR[x][1]}</p>`).join("")+`<p>${pend.length?"Sin los drivers, el rendimiento baja.":"Todos los drivers instalados."}</p>`);
+ btns(pend.map(x=>["Instalar driver: "+DR[x][0],()=>{P.dr[x]=1;drivers()},"sec"]).concat([["💿 Siguiente: instalar software",software,""]]));
+}
+async function bench(){
+ const id=++run;btns([]);
+ const ram=parseInt(get("ram").n),cb={cpu1:78,cpu2:90,cpu3:80}[st.sel.cpu],gb={g0:15,g1:45,g2:62,g3:90}[st.sel.gpu];
+ const c=Math.min(100,cb+(ram>=32?8:0)),g=Math.round(gb*(P.dr.gfx?1:.6)),tot=Math.round((c+g)/2);
+ const need={ofi:[60,10,16],gam:[70,50,16],vid:[85,55,32]}[st.profile.id],bad=[];
+ if(c<need[0])bad.push("CPU");if(g<need[1])bad.push(P.dr.gfx?"gráfica":"gráfica (¡falta su driver!)");if(ram<need[2])bad.push("RAM");
+ const bar=(n,v,col)=>`<p>${n}: <b>${v}</b></p><div class="track"><div class="fill" style="background:${col};width:0;transition:width 1.2s" data-w="${v}"></div></div>`;
+ scr(`<b>📊 Test de rendimiento · ${P.os}</b>`+bar("CPU",c,"#22c55e")+bar("Gráficos",g,"#a855f7")+bar("Total",tot,"#2563eb"));
+ await sleep(80);document.querySelectorAll("#scr [data-w]").forEach(e=>e.style.width=e.dataset.w+"%");
+ await sleep(1400);if(id!==run)return;
+ const t=total();
+ $("scr").insertAdjacentHTML("beforeend",`<p>${bad.length?"❌ No llega para «"+st.profile.name+"»: mejora "+bad.join(", ")+".":"✅ ¡Perfecto para «"+st.profile.name+"»!"}</p><p>💶 Has gastado ${t} € de ${st.profile.budget} € (te sobran ${st.profile.budget-t} €).</p><p>${swMsg()}</p>`);
+ btns([["🔁 Jugar de nuevo",again],["← Volver a los drivers",drivers,"sec"]]);
+}
+function again(){run++;$("pc").classList.add("hid");$("app").classList.remove("hid");st.sel={};render();scrollTo(0,0)}
+$("next").onclick=startPC;
+/* ===== SOFTWARE SEGÚN EL TIPO DE PC: [nombre, GB, recomendado, solo Windows] ===== */
+const SW={
+ ofi:[["Suite ofimática (LibreOffice)",3,1],["Navegador web",1,1],["Lector de PDF",.5,1],["Antivirus / seguridad",1,1],["Videollamadas (Teams / Meet)",2,1],["Steam + juegos grandes",80,0],["DaVinci Resolve (vídeo)",6,0],["Blender (3D)",4,0]],
+ gam:[["Steam (tienda y lanzador)",1,1],["Juego AAA (≈70 GB)",70,1],["Discord / chat de voz",1,1],["Monitor de temperaturas",.1,1],["Navegador web",1,1],["Suite ofimática",3,0],["DaVinci Resolve (vídeo)",6,0],["Antivirus pesado de pago",2,0]],
+ vid:[["DaVinci Resolve (edición de vídeo)",6,1],["Blender (3D y animación)",4,1],["GIMP (edición de imagen)",.5,1],["HandBrake (conversor de vídeo)",.2,1],["Navegador web",1,1],["Adobe Photoshop (solo Windows)",3,0,1],["Steam + juegos grandes",80,0],["Suite ofimática",3,0]]};
+function disk(){const m=get("ssd").n.match(/(\d+)\s*(TB|GB)/);return m?(m[2]==="TB"?m[1]*1000:+m[1]):500}
+const osGB=()=>P.os.startsWith("Win")?30:15;
+function swMsg(){
+ const L=SW[st.profile.id],ins=P.sw||[],miss=L.filter((a,i)=>a[2]&&!ins.includes(i)).map(a=>a[0]),ex=L.filter((a,i)=>!a[2]&&ins.includes(i)).map(a=>a[0]);
+ return miss.length||ex.length?"💿 Software: "+(miss.length?"te falta "+miss.join(", ")+". ":"")+(ex.length?"Sobra "+ex.join(", ")+".":""):"💿 Software perfecto para este tipo de PC ✅";
+}
+function software(){
+ P.sw=P.sw||[];const L=SW[st.profile.id],used=P.sw.reduce((s,i)=>s+L[i][1],0),free=disk()-osGB()-used;
+ scr(`<b>${P.os} · Software para «${st.profile.name}»</b><p>Instala lo que necesita este tipo de PC. Espacio libre: <b>${Math.round(free*10)/10} GB</b> de ${disk()} GB (el sistema ocupa ${osGB()} GB).</p>`+(P.m?`<p>${P.m}</p>`:"")+L.map((a,i)=>`<p>${P.sw.includes(i)?"✅":"⬜"} ${a[0]} · ${a[1]} GB</p>`).join(""));
+ btns(L.map((a,i)=>[(P.sw.includes(i)?"Quitar: ":"Instalar: ")+a[0],()=>tog(i),"sec"]).concat([["📊 Ejecutar test de rendimiento",bench,""]]));
+}
+function tog(i){
+ const L=SW[st.profile.id],a=L[i];P.m="";
+ if(P.sw.includes(i))P.sw=P.sw.filter(x=>x!==i);
+ else if(a[3]&&!P.os.startsWith("Win"))P.m="⚠ "+a[0]+" no tiene versión para Linux.";
+ else if(a[1]>disk()-osGB()-P.sw.reduce((s,j)=>s+L[j][1],0))P.m="⚠ No hay espacio suficiente en el disco.";
+ else P.sw.push(i);
+ software();
+}
+renderProfiles();
+</script>
+</body>
+</html>
